@@ -1,0 +1,16 @@
+---
+
+- name: SLACK | Send notification message via Slack
+  become: false
+  slack:
+    token: "{{ slack_webhook_token }}"
+    msg: 'role applied to {{ inventory_hostname }} SUCCESSFULLY!'
+    channel: '#chatops'
+    username: 'ansible@localhost'
+    parse: 'none'
+    color: 'good'
+  delegate_to: localhost
+  when:
+    - doSlackNotify
+    - slack_webhook_token is defined
+    - (slack_webhook_token | trim != '')

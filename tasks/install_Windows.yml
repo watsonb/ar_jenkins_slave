@@ -1,0 +1,84 @@
+---
+
+- name: WIN_GET_URL | Download Jenkins Swarm client
+  win_get_url:
+    url: "{{ jenkins_slave_jenkins_swarm_jar_url }}"
+    dest: "{{ jenkins_slave_bin_dir }}"
+    force: false  # don't download if we already have it
+  tags: [ win_client ]
+
+# TODO: Interactive slaves
+# TODO: password isn't getting picked up correctly from var overrides
+# TODO: this is needed if we launch the batch file via a user in an interactive
+#       session.  Will keep commented out for future use
+# - name: WIN_ENVIRONMENT | Setup environment variable for Jenkins user password
+#   win_environment:
+#     state: present
+#     name: "{{ jenkins_slave_win_env_var_user_password_name }}"
+#     value: "{{ jenkins_slave_win_env_var_user_password_name_value }}"
+#     level: "{{ jenkins_slave_win_env_var_user_password_name_level }}"
+#   tags: [ win_environment ]
+
+- name: WIN_TEMPLATE | Template the Jenkins swarm start batch file
+  win_template:
+    src: j2.swarm_start.bat
+    dest: "{{ jenkins_slave_bin_dir }}\\{{ jenkins_slave_win_swarm_batch_file }}"
+  notify:
+    - restart windows jenkins slave
+  tags: [ win_bat ]
+
+- name: "WIN_CHOCOLATEY | Install nssm from chocolatey"
+  win_chocolatey:
+    name: nssm
+  tags: [ win_nssm ]
+
+# TODO: don't really need to determine java as nssm is just calling .bat file
+- name: WIN_SHELL | get JAVA_HOME
+  win_shell: echo %JAVA_HOME%
+  args:
+    executable: cmd
+  register: java_home
+  failed_when: java_home.stdout_lines[0] == "" or java_home.stdout_lines[0] == "%JAVA_HOME%"
+  changed_when: false
+  tags: [ win_svc ]
+
+# TODO: don't really need to determine java as nssm is just calling .bat file
+- name: SET_FACT | java exe
+  set_fact:
+    java_exe: "{{ java_home.stdout_lines[0] }}\\bin\\java.exe"
+  changed_when: false
+  tags: [ win_svc ]
+
+# TODO: service isn't started
+# see https://github.com/ansible/ansible/issues/35442
+# TODO: this runs as a service, hence a non-interactive session.  if we need a
+#       slave that does things interactively, will need to put batch file in
+#       user's auto-startup folder
+- name: WIN_NSSM | Define a Jenkins Slave service
+  win_nssm:
+    name: jenkins-slave
+    application: "{{ jenkins_slave_bin_dir }}\\{{ jenkins_slave_win_swarm_batch_file }}"
+    stdout_file: "{{ jenkins_slave_log_dir }}\\jenkins_slave.log"
+    stderr_file: "{{ jenkins_slave_log_dir }}\\jenkins_slave.log"
+    start_mode: auto
+    state: started
+  register: service
+  changed_when: "service.changed_by is defined and service.changed_by != 'start_mode'"
+  tags: [ win_svc ]
+
+# see https://github.com/ansible/ansible/issues/35442
+- name: WIN_SHELL | check jenkins-slave service status
+  win_shell: nssm status jenkins-slave
+  register: result
+  changed_when: false
+  tags: [ win_svc ]
+
+# see https://github.com/ansible/ansible/issues/35442
+# adding ignore_errors due to this ouput
+# "msg": "non-zero return code", "rc": 1, "stderr":
+# "jenkins-slave: Unexpected status SERVICE_START_PENDING in response to START control.
+- name: RAW | start jenkins-slave service
+  raw: nssm start jenkins-slave
+  when: "'SERVICE_STOPPED' in result.stdout_lines"
+  tags: [ win_svc ]
+  ignore_errors: true

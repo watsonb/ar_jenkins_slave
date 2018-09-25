@@ -1,0 +1,30 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    - doSlackNotify: false
+    - java_openjdk_env_var_users: [ root ]
+
+  pre_tasks:
+
+    - name: Notify Slack that role application beginning
+      include_tasks: 'slack_begin.yml'
+
+    - name: LINEINFILE | Disable requiretty in /etc/sudoers
+      become: true
+      lineinfile:
+        path: /etc/sudoers
+        regexp: '^Defaults    requiretty'
+        line: 'Defaults    !requiretty'
+        state: present
+        backrefs: true
+
+  roles:
+
+    - role: ar_jenkins_slave
+
+  post_tasks:
+
+    - name: Notify Slack that role application finished
+      include_tasks: 'slack_finish.yml'

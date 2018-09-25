@@ -1,0 +1,14 @@
+---
+# tasks file for ar_jenkins_slave
+
+- name: Add the system specific private variables -> {{ ansible_os_family }}
+  include_vars: "{{ ansible_os_family }}.yml"
+  tags: [ include_vars ]
+
+- name: Setup system-local user to run the slave -> {{ ansible_os_family }}
+  include_tasks: "user_{{ ansible_os_family }}.yml"
+  tags: [ user ]
+
+- name: Install the slave -> {{ ansible_os_family }}
+  include_tasks: "install_{{ ansible_os_family }}.yml"
+  tags: [ install ]

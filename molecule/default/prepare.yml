@@ -1,0 +1,21 @@
+---
+# This prepare is needed for the delegated driver as the templates we have in
+# VMWare have the user configured, but not a member of password-less sudo
+
+- name: Prepare
+  hosts: all
+  gather_facts: false
+
+  tasks:
+
+    - name: LINEINFILE | Give ssh user passwordless sudo
+      become: true
+      become_user: root
+      lineinfile:
+        create: true
+        group: root
+        owner: root
+        mode: 'u=r,g=,o='
+        path: "/etc/sudoers.d/{{ molecule_yml.driver.ssh_user }}"
+        line: "{{ molecule_yml.driver.ssh_user }}     ALL=(ALL)   NOPASSWD: ALL"
+        state: present

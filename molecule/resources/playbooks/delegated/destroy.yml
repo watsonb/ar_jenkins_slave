@@ -1,0 +1,20 @@
+---
+
+- name: Destroy
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ not lookup('env', 'MOLECULE_DEBUG') | bool }}"
+  tasks:
+
+    - name: VMWARE_GUEST | Delete VMs in VMware
+      vmware_guest:
+        hostname: "{{ molecule_yml.driver.vcenter_fqdn }}"
+        username: "{{ molecule_yml.driver.vcenter_username }}"
+        password: "{{ molecule_yml.driver.vcenter_password }}"
+        name: "{{ item.name }}"
+        state: absent
+        force: true
+        validate_certs: false
+      register: server
+      with_items: "{{ molecule_yml.platforms }}"

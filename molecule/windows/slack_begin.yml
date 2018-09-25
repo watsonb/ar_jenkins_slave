@@ -1,0 +1,35 @@
+---
+
+- name: SET_FACT | lookup the DO_SLACK_NOTIFY environment variable
+  set_fact:
+    env_slack: "{{ lookup('env', 'DO_SLACK_NOTIFY') }}"
+
+- debug:
+    var: env_slack
+    verbosity: 1
+
+- name: SET_FACT | set the local slack notify variable if DO_SLACK_NOTIFY variable was set to something
+  set_fact:
+    doSlackNotify: true
+  when:
+    - env_slack is defined
+    - (env_slack | trim != '')
+
+- name: SET_FACT | lookup the SLACK_WEBHOOK_TOKEN environment variable
+  set_fact:
+    slack_webhook_token: "{{ lookup('env', 'SLACK_WEBHOOK_TOKEN') }}"
+
+- name: SLACK | Send notification message via Slack
+  become: false
+  slack:
+    token: "{{ slack_webhook_token }}"
+    msg: 'testing role on {{ inventory_hostname }}...'
+    channel: '#chatops'
+    username: 'ansible@localhost'
+    parse: 'none'
+    color: 'normal'
+  delegate_to: localhost
+  when:
+    - doSlackNotify
+    - slack_webhook_token is defined
+    - (slack_webhook_token | trim != '')

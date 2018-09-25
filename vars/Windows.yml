@@ -1,0 +1,11 @@
+---
+
+jenkins_slave_jenkins_home: "C:\\Users\\{{ jenkins_slave_jenkins_user }}"
+jenkins_slave_bin_dir: "{{ jenkins_slave_jenkins_home }}\\bin"
+jenkins_slave_workspace_dir: "{{ jenkins_slave_jenkins_home }}\\workspace"
+jenkins_slave_log_dir: "{{ jenkins_slave_jenkins_home }}\\log"
+jenkins_slave_win_swarm_batch_file: swarm_start.bat
+
+# TODO: Interactive slaves
+# jenkins_slave_win_auto_start_home: "{{ jenkins_slave_jenkins_home }}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+# jenkins_slave_win_env_var_user_password_name: JENKINS_PW

@@ -1,0 +1,30 @@
+---
+
+- name: GET_URL | Download Swarm client
+  get_url:
+    url: "{{ jenkins_slave_jenkins_swarm_jar_url }}"
+    dest: "{{ jenkins_slave_bin_dir }}/{{ jenkins_slave_jenkins_swarm_jar }}"
+    owner: "{{ jenkins_slave_jenkins_user }}"
+    group: "{{ jenkins_slave_jenkins_user }}"
+  become: true
+  notify:
+    - daemon reload
+    - restart jenkins slave
+
+- name: TEMPLATE | Install the swarm service startup script
+  template:
+    src: jenkins-slave.service.j2
+    dest: /etc/systemd/system/jenkins-slave.service
+    mode: 0777
+  become: true
+  register: slave_service_script
+  notify:
+    - daemon reload
+    - restart jenkins slave
+
+- name: SERVICE | Ensure Jenkins slave service is started and enabled
+  service:
+    name: jenkins-slave
+    state: started
+    enabled: true
+  become: true

@@ -1,0 +1,6 @@
+---
+
+jenkins_slave_jenkins_home: /home/{{ jenkins_slave_jenkins_user }}
+jenkins_slave_bin_dir: "{{ jenkins_slave_jenkins_home }}/bin"
+jenkins_slave_workspace_dir: "{{ jenkins_slave_jenkins_home }}/workspace"
+jenkins_slave_log_dir: "{{ jenkins_slave_jenkins_home }}/log"

@@ -1,0 +1,9 @@
+---
+
+- src: https://github.com/watsonb/ar_java_openjdk.git
+  scm: git
+  version: master
+
+- src: https://github.com/watsonb/ar_win_java.git
+  scm: git
+  version: master

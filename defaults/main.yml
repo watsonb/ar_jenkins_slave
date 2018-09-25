@@ -1,0 +1,34 @@
+---
+# defaults file for ar_jenkins_slave
+
+# OS Agnostic
+# this is the username on the local box that will run the jenkins slave
+jenkins_slave_jenkins_user: jenkins
+
+jenkins_slave_jenkins_swarm_jar: swarm-client-3.3.jar
+jenkins_slave_jenkins_swarm_jar_url: https://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/swarm-client/3.3/swarm-client-3.3.jar
+
+jenkins_slave_jenkins_master: http://host.domain:8080
+jenkins_slave_jenkins_username: jenkins
+jenkins_slave_jenkins_password: ""
+
+jenkins_slave_jenkins_slave_name: "{{ inventory_hostname }}"
+jenkins_slave_swarm_labels: "{{ inventory_hostname }}"
+jenkins_slave_swarm_num_executors: 2
+
+# Linux specific
+# For the possible values of the two SystemD parameters below, please refer to:
+# https://www.freedesktop.org/software/systemd/man/systemd.service.html and find
+# Restart=
+# Takes one of no, on-success, on-failure, on-abnormal, on-watchdog, on-abort, or always
+jenkins_slave_service_restart: 'no'
+jenkins_slave_service_restart_seconds: 3
+
+# Windows specific
+jenkins_slave_win_create_user: true
+jenkins_slave_win_user_password: password
+
+# TODO: Interactive slaves
+# jenkins_slave_win_env_var_user_password_name_value: password
+# other options are machine (system) and process (temp shell)
+# jenkins_slave_win_env_var_user_password_name_level: user

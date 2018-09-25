@@ -1,0 +1,165 @@
+---
+ansible:
+  host_key_checking: false
+  raw_env_vars:
+    ANSIBLE_FORCE_COLOR: true
+  roles_path: $PWD/molecule/windows/roles/
+  ansiblecfg_defaults:
+    retry_files_enabled: false
+
+dependency:
+  name: galaxy
+  options:
+    ignore-errors: true
+    ignore-certs: true
+    roles-path: $PWD/molecule/windows/roles/
+    role-file: $PWD/molecule/windows/requirements.yml
+
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+
+# Notes on Lint.  If you're role has requirements and installs them via Galaxy,
+# those roles will be linted too on subsequent runs.  The linter runs before
+# installing dependencies, so you should be good the first time if your code is
+# clean.  You may need to do an: rm -rf molecule/default/roles/<role_name>/ on
+# subsequent runs once roles are installed.  The yamllint config explicitly
+# ignores this, but Molecule is shoving files/directories explicitly and it is
+# just a mess.
+lint:
+  name: yamllint
+  # enabled: false
+  options:
+    config-file: $PWD/.yamllint
+    # config-data: "{extends: default, ignore: /molecule/default/roles/ }"
+
+platforms:
+  - name: win2016-ar-jenkins-slave-$BRANCH_NAME
+    box: windows_2016_docker_virtualbox
+    box_url: "http://example.com/vagrant/boxes/windows_2016_docker_virtualbox.box"
+    memory: 2048
+    cpus: 2
+    instance_raw_config_args:
+      - "vm.network 'forwarded_port', guest: 5985, host: 55985"
+      - "vm.network 'forwarded_port', guest: 5986, host: 55986"
+      - "vm.boot_timeout = 600"
+      - "winrm.max_tries = 40"
+      - "winrm.username = 'vagrant'"
+      - "winrm.password = 'vagrant'"
+    interfaces:
+      - auto_config: true
+        network_name: private_network
+        type: dhcp
+    config_options:
+      synced_folder: false
+    provider_options:
+      gui: false
+      linked_clone: true
+    provider_raw_config_args:
+      - "customize ['modifyvm', :id, '--cpuexecutioncap', '80']"
+    provision: true
+    groups:
+      - windows
+      - jenkins_slave
+      - java
+
+provisioner:
+  name: ansible
+  connection_options:
+    ansible_become: false
+    ansible_user: vagrant
+    ansible_password: vagrant
+    ansible_port: 55986
+    ansible_host: 127.0.0.1
+    ansible_connection: winrm
+    ansible_winrm_transport: basic
+    ansible_winrm_server_cert_validation: ignore
+  inventory:
+    group_vars:
+      java:
+        java_package: "jre"
+        java_major_version: 8
+        java_transport: "win-chocolatey"
+      jenkins_slave:
+        jenkins_slave_jenkins_master: "http://jenkins.example.com:8080/"
+        jenkins_slave_jenkins_username: "{{ lookup('env', 'CONFIG_API_USER_JENKINS') }}"
+        jenkins_slave_jenkins_password: "{{ lookup('env', 'CONFIG_API_PW_JENKINS') }}"
+        jenkins_slave_swarm_labels: "{{ inventory_hostname }} moleculetest"
+        jenkins_slave_jenkins_user: jenkins
+        jenkins_slave_jenkins_swarm_jar: swarm-client-3.3.jar
+        jenkins_slave_jenkins_swarm_jar_url: https://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/swarm-client/3.3/swarm-client-3.3.jar
+        jenkins_slave_jenkins_home: "C:\\Users\\{{ jenkins_slave_jenkins_user }}"
+        jenkins_slave_bin_dir: "{{ jenkins_slave_jenkins_home }}\\bin"
+        jenkins_slave_workspace_dir: "{{ jenkins_slave_jenkins_home }}\\workspace"
+        jenkins_slave_log_dir: "{{ jenkins_slave_jenkins_home }}\\log"
+        jenkins_slave_win_user_password: $WIN_USER_PASSWORD
+        jenkins_slave_win_create_user: true
+      windows:
+        ansible_become: false
+        ansible_user: vagrant
+        ansible_password: vagrant
+        ansible_port: 55986
+        ansible_host: 127.0.0.1
+        ansible_connection: winrm
+        ansible_winrm_transport: basic
+        ansible_winrm_server_cert_validation: ignore
+  playbooks:
+    azure:
+      create: ../resources/playbooks/azure/create.yml
+      destroy: ../resources/playbooks/azure/destroy.yml
+    delegated:
+      create: ../resources/playbooks/delegated/create.yml
+      destroy: ../resources/playbooks/delegated/destroy.yml
+  lint:
+    name: ansible-lint
+    enable: true
+    options:
+      exclude:
+        - 'molecule/default/roles/ar_jenkins_slave'
+        - 'molecule/windows/roles/ar_jenkins_slave'
+        - '../ar_java_openjdk'
+        - 'molecule/default/roles/ar_java_openjdk'
+        - '../ar_win_java'
+        - 'molecule/windows/roles/ar_win_java'
+
+scenario:
+  name: windows
+  create_sequence:
+    - create
+    - prepare
+  check_sequence:
+    - destroy
+    - create
+    - prepare
+    - converge
+    - check
+    - destroy
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+  destroy_sequence:
+    - destroy
+  test_sequence:
+    - lint
+    - destroy
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - destroy
+
+verifier:
+  name: testinfra
+  directory: ../resources/win_tests/
+  options:
+    junitxml: ../reports/junit-windows-out.xml
+    # vv: true  # more verbose output
+    # s: true  # see lots of output
+  lint:
+    name: flake8

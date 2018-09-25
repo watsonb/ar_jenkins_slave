@@ -1,0 +1,16 @@
+[Unit]
+Description=Jenkins Slave Service
+After=network.target
+
+[Service]
+WorkingDirectory={{ jenkins_slave_workspace_dir }}
+SyslogIndentifier=JenkinsSlave
+ExecStart=/usr/bin/java -jar {{ jenkins_slave_bin_dir }}/{{ jenkins_slave_jenkins_swarm_jar }} -username {{ jenkins_slave_jenkins_username }} -password {{ jenkins_slave_jenkins_password }} -name {{ jenkins_slave_jenkins_slave_name }} -labels "{{ jenkins_slave_swarm_labels }}" -master {{ jenkins_slave_jenkins_master }} -fsroot {{ jenkins_slave_workspace_dir }}/ -retry 5 -mode exclusive -executors {{ jenkins_slave_swarm_num_executors }} -disableSslVerification
+ExecStop=/bin/kill -TERM $MAINPID
+User={{ jenkins_slave_jenkins_user }}
+Type=simple
+Restart={{ jenkins_slave_service_restart }}
+RestartSec={{ jenkins_slave_service_restart_seconds }}
+
+[Install]
+WantedBy=multi-user.target

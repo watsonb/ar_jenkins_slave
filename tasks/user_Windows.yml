@@ -1,0 +1,41 @@
+---
+
+# NOTE: this creates the local user that will (effectively) run the slave. If
+# there is already a local user on the box and you don't want to mess with the
+# password, just set jenkins_slave_win_create_user to false
+- name: WIN_USER | Ensure Jenkins Slave user is present on system
+  win_user:
+    name: "{{ jenkins_slave_jenkins_user }}"
+    password: "{{ jenkins_slave_win_user_password }}"
+    description: "Jenkins Slave"
+    fullname: "Jenkins Slave"
+    state: present
+    password_never_expires: true
+    user_cannot_change_password: true
+    update_password: on_create
+  when: jenkins_slave_win_create_user
+  tags: [ win_user ]
+
+- name: WIN_FILE | Ensure user home directory is present
+  win_file:
+    path: "{{ jenkins_slave_jenkins_home }}"
+    state: directory
+  tags: [ win_dirs ]
+
+- name: WIN_FILE | Create bin/workspace/logs folders
+  win_file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ jenkins_slave_bin_dir }}"
+    - "{{ jenkins_slave_workspace_dir }}"
+    - "{{ jenkins_slave_log_dir }}"
+  tags: [ win_dirs ]
+
+- name: WIN_ACL | grant full control to user home directory
+  win_acl:
+    path: "{{ jenkins_slave_jenkins_home }}"
+    user: "{{ jenkins_slave_jenkins_user }}"
+    rights: FullControl
+    type: allow
+    state: present

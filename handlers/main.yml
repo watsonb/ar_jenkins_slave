@@ -1,0 +1,22 @@
+---
+# handlers file for ar_jenkins_slave
+
+- name: daemon reload
+  shell: systemctl daemon-reload
+  become: true
+
+- name: restart jenkins slave
+  service:
+    name: jenkins-slave
+    state: restarted
+    enabled: true
+  become: true
+
+- name: restart windows jenkins slave
+  win_nssm:
+    name: jenkins-slave
+    application: "{{ jenkins_slave_bin_dir }}\\{{ jenkins_slave_win_swarm_batch_file }}"
+    stdout_file: "{{ jenkins_slave_log_dir }}\\jenkins_slave.log"
+    stderr_file: "{{ jenkins_slave_log_dir }}\\jenkins_slave.log"
+    start_mode: auto
+    state: restarted

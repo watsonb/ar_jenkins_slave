@@ -1,0 +1,135 @@
+---
+ansible:
+  host_key_checking: false
+  raw_env_vars:
+    ANSIBLE_FORCE_COLOR: true
+  roles_path: $PWD/molecule/default/roles/
+  ansiblecfg_defaults:
+    retry_files_enabled: false
+
+dependency:
+  name: galaxy
+  options:
+    ignore-errors: true
+    ignore-certs: true
+    roles-path: $PWD/molecule/default/roles/
+    role-file: $PWD/molecule/default/requirements.yml
+
+driver:
+  name: delegated
+  datastore: 'vmware-datastore-name'
+  network: 'vmware-network-name'
+  cluster: 'vmware-cluster-name'
+  datacenter: 'vmware-datacenter-name'
+  folder: 'vmware-folder-path'
+  vcenter_fqdn: 'vmware-vcenter-fully-qualified-domain-name'
+  vcenter_username: 'vmware-username'
+  vcenter_password: $VCENTER_PASSWORD
+  ssh_port: 22
+  ssh_user: 'ansible'  # assumes vmware template has this user locally and we
+  ssh_identity_file: '~/.ssh/ansible_id_rsa'  # use this private key to get in
+  options:
+    managed: true
+    login_cmd_template: 'ssh {instance} -F /tmp/molecule-ssh-config'
+    ansible_connection_options:
+      connection: ssh
+      ansible_ssh_common_args: '-F /tmp/molecule-ssh-config'
+
+# Notes on Lint.  If you're role has requirements and installs them via Galaxy,
+# those roles will be linted too on subsequent runs.  The linter runs before
+# installing dependencies, so you should be good the first time if your code is
+# clean.  You may need to do an: rm -rf molecule/default/roles/<role_name>/ on
+# subsequent runs once roles are installed.  The yamllint config explicitly
+# ignores this, but Molecule is shoving files/directories explicitly and it is
+# just a mess.
+lint:
+  name: yamllint
+  # enabled: false
+  options:
+    config-file: $PWD/.yamllint
+    # config-data: "{extends: default, ignore: /molecule/default/roles/ }"
+
+platforms:
+  - name: ubuntu-1604-ar-jenkins-slave-$BRANCH_NAME
+    template: 'ubuntu-1604-server-02'
+    disk_size: 30
+    memory_mb: 1048
+    num_cpus: 1
+    groups:
+      - jenkins_slave
+  - name: centos-7-ar-jenkins-slave-$BRANCH_NAME
+    template: 'centos-7-server-01'
+    disk_size: 30
+    memory_mb: 1048
+    num_cpus: 1
+    groups:
+      - jenkins_slave
+
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      jenkins_slave:
+        jenkins_slave_jenkins_master: "http://jenkins.example.com:8080/"
+        jenkins_slave_jenkins_username: "{{ lookup('env', 'CONFIG_API_USER_JENKINS') }}"
+        jenkins_slave_jenkins_password: "{{ lookup('env', 'CONFIG_API_PW_JENKINS') }}"
+        jenkins_slave_jenkins_label: "{{ inventory_hostname }} moleculetest"
+        jenkins_slave_swarm_labels: "{{ inventory_hostname }} moleculetest"
+  playbooks:
+    azure:
+      create: ../resources/playbooks/azure/create.yml
+      destroy: ../resources/playbooks/azure/destroy.yml
+    delegated:
+      create: ../resources/playbooks/delegated/create.yml
+      destroy: ../resources/playbooks/delegated/destroy.yml
+  lint:
+    name: ansible-lint
+    enable: true
+    options:
+      exclude:
+        - 'molecule/default/roles/ar_jenkins_slave'
+        - '../ar_java_openjdk'
+        - 'molecule/default/roles/ar_java_openjdk'
+        - '../ar_win_java'
+        - 'molecule/default/roles/ar_win_java'
+
+scenario:
+  name: default
+  create_sequence:
+    - create
+    - prepare
+  check_sequence:
+    - destroy
+    - create
+    - prepare
+    - converge
+    - check
+    - destroy
+  converge_sequence:
+    - create
+    - prepare
+    - converge
+  destroy_sequence:
+    - destroy
+  test_sequence:
+    - lint
+    - destroy
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - destroy
+
+verifier:
+  name: testinfra
+  directory: ../resources/tests/
+  options:
+    junitxml: ../reports/junit-out.xml
+    # vv: true  # more verbose output
+    # s: true  # see lots of output
+  lint:
+    name: flake8

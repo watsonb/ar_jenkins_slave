@@ -1,0 +1,20 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    - doSlackNotify: false
+
+  pre_tasks:
+
+    - name: Notify Slack that role application beginning
+      include_tasks: 'slack_begin.yml'
+
+  roles:
+
+    - role: ar_jenkins_slave
+
+  post_tasks:
+
+    - name: Notify Slack that role application finished
+      include_tasks: 'slack_finish.yml'

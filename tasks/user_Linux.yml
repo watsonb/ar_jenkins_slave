@@ -1,0 +1,21 @@
+---
+
+- name: USER | Create user that will run jenkins slave service
+  user:
+    name: "{{ jenkins_slave_jenkins_user }}"
+    comment: "Jenkins Slave"
+    home: "{{ jenkins_slave_jenkins_home }}"
+    shell: /bin/bash
+    state: present
+  become: true
+
+- name: FILE | Create bin/workspace/logs folders
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ jenkins_slave_jenkins_user }}"
+  with_items:
+    - "{{ jenkins_slave_bin_dir }}"
+    - "{{ jenkins_slave_workspace_dir }}"
+    - "{{ jenkins_slave_log_dir }}"
+  become: true

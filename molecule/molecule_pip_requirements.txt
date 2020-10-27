@@ -99,7 +99,7 @@ click-completion==0.3.1
 colorama==0.3.9
 configparser==3.5.0
 cookiecutter==1.6.0
-cryptography==2.2.2
+cryptography==3.2
 docker-py==1.10.6
 docker-pycreds==0.2.3
 entrypoints==0.2.3

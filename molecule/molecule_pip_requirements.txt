@@ -119,7 +119,7 @@ jinja2-time==0.2.0
 jmespath==0.9.3
 keyring==12.2.1
 knack==0.3.2
-lxml==4.2.1
+lxml==4.6.2
 MarkupSafe==1.0
 mccabe==0.6.1
 molecule==2.14.0

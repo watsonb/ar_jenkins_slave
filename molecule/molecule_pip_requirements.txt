@@ -114,7 +114,7 @@ humanfriendly==4.12.1
 idna==2.6
 ipaddress==1.0.22
 isodate==0.6.0
-Jinja2==2.10
+Jinja2==2.11.3
 jinja2-time==0.2.0
 jmespath==0.9.3
 keyring==12.2.1

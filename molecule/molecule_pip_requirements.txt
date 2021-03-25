@@ -154,7 +154,7 @@ python-dateutil==2.7.3
 python-gilt==1.2.1
 pyvmomi==6.7.0
 pywinrm==0.3.0
-PyYAML==3.12
+PyYAML==5.4
 requests==2.18.4
 requests-credssp==1.0.0
 requests-ntlm==1.1.0
